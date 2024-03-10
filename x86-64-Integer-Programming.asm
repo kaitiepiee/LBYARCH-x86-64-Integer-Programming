@@ -22,7 +22,8 @@ section .data
     
     comma db ", ",0
     length db 0x00
-    input dd 0x00000000
+    input dq 0x0000000000000000
+    count dq 0x0000000000000000
     sum db 0x00
     m db 0x00
 
@@ -32,14 +33,14 @@ section .text
     
 main:
     PRINT_STRING msg_input
-    GET_STRING input, 32
-    mov eax, [input]
+    GET_DEC 8, input
+    mov rax, [input]
+    mov rcx, 0 ;necessary or digit count will be one higher
+    PRINT_DEC 8, rax
     jmp check_input
 
 check_input:
     ;Check if input is a positive integer
-    mov rdi, input
-    jmp str_to_int
     mov rsi, rax
     jmp is_positive
     cmp rax, 0
@@ -60,25 +61,43 @@ invalid_input:
 ;Print the m-th power of each digit
 print_armstrong_digits:
     mov rdi, rax      ;input number
-    mov rcx, [length] ;length of input number
+    mov rcx, [count]  ;length of input number
     mov rdx, [m]      ;m value
     xor r8, r8        ;initialize counter
     
-
-;Convert a string to an integer
-str_to_int:
-    xor rax, rax ;result
-    xor rbx, rbx ;digit
     
 ;Check if a number is positive  
 is_positive:
-    cmp rdi, 0
+    cmp rsi, 0
     jle .negative
     mov rax, 1
-    ret
+    PRINT_STRING "positive"
+    jmp count_digits ;count digits if input is valid
  .negative:
-    xor rax, rax
+    PRINT_STRING "Invalid input"
+    xor rax, rax ; TODO: Ask if user wants to continue, if yes jmp main
     ret
+
+count_digits: 
+    cmp rax, 0
+    je post_count     ;ends when number is 0 after loop
+
+    inc rcx           ;increment the number of digits  
+    mov rdx, 0  ;set remainder to 0                
+    mov rbx, 10 ;set divisor to 10             
+    idiv rbx    ;divide rax by 10             
+                ;TODO: add something here to store the digits (digits are in rdx)
+    jmp count_digits
+ 
+post_count:   
+    mov [count], rcx
+  
+  
+  
+  
+  
+  
+  
   
 ;Check if the input number is an Armstrong number  
 is_armstrong:
