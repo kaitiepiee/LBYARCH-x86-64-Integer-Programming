@@ -27,13 +27,13 @@ section .data
     sum db 0x00
     m db 0x00
     digits dq 10 dup(0)  ; 10 digit array
+    response dq 0x0000000000000000
 
 
 section .text
     global main
     
 main:
-    mov rbp, rsp; for correct debugging
     PRINT_STRING msg_input
     GET_DEC 8, input
     mov rax, [input]
@@ -145,7 +145,13 @@ not_armstrong:
     
 continue:
     NEWLINE
-    PRINT_STRING msg_continue ;TODO: continue loop
+    PRINT_STRING msg_continue
+    GET_CHAR response
+    mov rsi, response
+    mov al, byte [rsi]
+    cmp al, 'Y'
+    je main
+    jne end
 
 end:
     xor rax, rax 
