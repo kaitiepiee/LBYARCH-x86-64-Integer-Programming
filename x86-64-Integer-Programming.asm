@@ -34,6 +34,8 @@ section .text
     global main
     
 main:
+    xor rsi, rsi 
+    xor rdi, rdi
     PRINT_STRING msg_input
     GET_DEC 8, input
     mov rax, [input]
@@ -144,15 +146,19 @@ not_armstrong:
     jmp continue
     
 continue:
+    jmp print_prompt
+
+print_prompt: ;TODO: fix double msg_continue prompt
     NEWLINE
     PRINT_STRING msg_continue
     GET_CHAR response
-    mov rsi, response
-    mov al, byte [rsi]
-    cmp al, 'Y'
+    movzx rsi, byte [response] ; zero-extend to clear upper bits
+    cmp rsi, 'Y'
     je main
-    jne end
-
+    cmp rsi, 'N'
+    je end
+    jmp print_prompt ; Prompt again if response is neither 'Y' nor 'N'N
+    
 end:
     xor rax, rax 
     ret
