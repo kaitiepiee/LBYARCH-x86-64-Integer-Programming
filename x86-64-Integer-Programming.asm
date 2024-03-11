@@ -14,11 +14,11 @@
 
 section .data
     msg_input db "Input Number: ",0
-    msg_result db "m-th power of each digits:",0
+    msg_result db "m-th power of each digits :",0
     msg_sum_of_digits db "Sum of the m-th power digits: ",0
     msg_armstrong db "Armstrong Number: ", 0
     msg_continue db "Do you want to continue (Y/N)? ",0
-    msg_invalid_input db "Error: Invalid input. Please enter a positive integer.",0
+    msg_invalid_input db "Error: Invalid input.",0
     
     comma db ", ",0
     length db 0x00
@@ -26,17 +26,21 @@ section .data
     count dq 0x0000000000000000
     sum db 0x00
     m db 0x00
+    digits dq 10 dup(0)  ; 10 digit array
 
 
 section .text
     global main
     
 main:
+    mov rbp, rsp; for correct debugging
     PRINT_STRING msg_input
     GET_DEC 8, input
     mov rax, [input]
     mov rcx, 0 ;necessary or digit count will be one higher
+    mov r10, 0 ; store the sum
     PRINT_DEC 8, rax
+    NEWLINE
     jmp check_input
 
 check_input:
@@ -46,17 +50,12 @@ check_input:
     cmp rax, 0
     je invalid_input
     
-    ;If positive, continue
-    mov rsi, input
-    jmp str_to_int
-    mov rdi, rax
-    jmp is_armstrong
     
 
 invalid_input:
     PRINT_STRING msg_invalid_input
     NEWLINE
-    jmp main
+    jmp continue
     
 ;Print the m-th power of each digit
 print_armstrong_digits:
@@ -69,13 +68,13 @@ print_armstrong_digits:
 ;Check if a number is positive  
 is_positive:
     cmp rsi, 0
-    jle .negative
-    mov rax, 1
-    PRINT_STRING "positive"
+    je invalid_input
+    jl .negative
     jmp count_digits ;count digits if input is valid
  .negative:
-    PRINT_STRING "Invalid input"
-    xor rax, rax ; TODO: Ask if user wants to continue, if yes jmp main
+    PRINT_STRING "Error: negative number input"
+    jmp continue
+    xor rax, rax 
     ret
 
 count_digits: 
@@ -85,23 +84,69 @@ count_digits:
     inc rcx           ;increment the number of digits  
     mov rdx, 0  ;set remainder to 0                
     mov rbx, 10 ;set divisor to 10             
-    idiv rbx    ;divide rax by 10             
-                ;TODO: add something here to store the digits (digits are in rdx)
+    idiv rbx    ;divide rax by 10   
+    mov rsi, digits             ; load the address of the digits array
+    mov rdi, rcx                ; Use rcx as an index to access the array
+    mov [rsi + rdi*8 - 8], rdx  ; Store the digit at the corresponding index          
+
     jmp count_digits
- 
+
 post_count:   
-    mov [count], rcx
-  
-  
-  
-  
-  
-  
-  
-  
-;Check if the input number is an Armstrong number  
+
+    mov [count], rcx      ;input is in input ;count has the number of digits ;digits has the digits in reverse order
+    
+    PRINT_STRING msg_result
+    
+outer_loop:
+    cmp rcx, 0
+    jle check_armstrong
+    dec rcx
+    mov r9, 1              ;store the power
+    mov r11, [count]       ;store the counter 3
+
+inner_loop:
+    cmp r11, 0 ;loops count num of times
+    jle add_to_sum
+    dec r11 
+    imul r9, [digits + rcx*8]
+    jmp inner_loop
+     
+add_to_sum:
+    PRINT_DEC 8, r9
+    add r10, r9
+    
+    cmp rcx, 0
+    je no_comma
+    
+pcomma:
+    PRINT_STRING ", "
+    
+no_comma:
+    jmp outer_loop
+    
+check_armstrong:
+    mov rax, [input]
+    cmp rax, r10
+    NEWLINE
+    PRINT_STRING msg_sum_of_digits
+    PRINT_DEC 8, r10
+    je is_armstrong
+    jne not_armstrong
+
 is_armstrong:
-    mov rax, rdi      ; store input number
-    xor rbx, rbx      ; clear sum
-    mov rcx, [m]      ; get m value
-    mov rdx, [length] ; get length of number
+    NEWLINE
+    PRINT_STRING "Armstrong Number: Yes"
+    jmp continue
+    
+not_armstrong:
+    NEWLINE
+    PRINT_STRING "Armstrong Number: No"
+    jmp continue
+    
+continue:
+    NEWLINE
+    PRINT_STRING msg_continue ;TODO: continue loop
+
+end:
+    xor rax, rax 
+    ret
